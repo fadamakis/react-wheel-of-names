@@ -1,63 +1,107 @@
-import { useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { inverseBezierTime } from "../lib/easing";
 
-interface UseWheelAnimationProps {
+const EASE = [0.16, 1, 0.25, 1] as const;
+
+type PendingWinner = {
+  index: number;
+  name: string;
+  rotation: number;
+};
+
+type UseWheelAnimationProps = {
   names: string[];
-  onComplete: (name: string) => void;
-}
+  initialRotation?: number;
+  spinDurationMs: number;
+  soundOn: boolean;
+  onTick?: () => void;
+};
 
 export function useWheelAnimation({
   names,
-  onComplete,
+  initialRotation = 0,
+  spinDurationMs,
+  soundOn,
+  onTick,
 }: UseWheelAnimationProps) {
-  const [rotation, setRotation] = useState(0);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const animationRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(0);
+  const [rotation, setRotation] = useState(initialRotation);
+  const [spinning, setSpinning] = useState(false);
+  const [winnerIndex, setWinnerIndex] = useState<number | null>(null);
+  const [winnerName, setWinnerName] = useState<string | null>(null);
+  const pendingWinnerRef = useRef<PendingWinner | null>(null);
+  const tickTimeoutsRef = useRef<number[]>([]);
 
-  const spin = () => {
-    if (names.length < 2 || isSpinning) return;
+  useEffect(() => {
+    setRotation(initialRotation);
+  }, [initialRotation]);
 
-    setIsSpinning(true);
-    startTimeRef.current = 0;
-
-    const spinCount = 5 + Math.random() * 5;
-    const totalRotation = spinCount * 2 * Math.PI;
-    const duration = 4000;
-
-    const animate = (currentTime: number) => {
-      if (!startTimeRef.current) {
-        startTimeRef.current = currentTime;
+  useEffect(
+    () => () => {
+      for (const timeout of tickTimeoutsRef.current) {
+        window.clearTimeout(timeout);
       }
+    },
+    []
+  );
 
-      const elapsed = currentTime - startTimeRef.current;
-      const progress = Math.min(elapsed / duration, 1);
-      const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
-      const currentRotation = totalRotation * easeOut(progress);
+  const spin = useCallback(() => {
+    if (spinning || names.length < 2) return;
+    setWinnerIndex(null);
+    setWinnerName(null);
 
-      setRotation(currentRotation);
+    const winner = Math.floor(Math.random() * names.length);
+    const count = names.length;
+    const slice = 360 / count;
+    const baseExtra = (360 - winner * slice) % 360;
+    const jitter = (Math.random() - 0.5) * slice * 0.7;
+    const target = ((baseExtra + jitter) % 360 + 360) % 360;
+    const currentMod = ((rotation % 360) + 360) % 360;
+    let delta = target - currentMod;
+    if (delta <= 0) delta += 360;
+    delta += 360 * (5 + Math.floor(Math.random() * 2));
 
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        setIsSpinning(false);
-        const finalRotation = currentRotation % (2 * Math.PI);
-        const segmentAngle = (2 * Math.PI) / names.length;
-        const selectedIndex =
-          Math.floor((2 * Math.PI - finalRotation) / segmentAngle) %
-          names.length;
-        onComplete(names[selectedIndex]);
+    const newRotation = rotation + delta;
+    setSpinning(true);
+
+    tickTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+    tickTimeoutsRef.current = [];
+    if (soundOn && onTick) {
+      const crossings = Math.floor(delta / slice);
+      const startK = Math.max(1, crossings - 28);
+      for (let k = startK; k <= crossings; k += 1) {
+        const yTarget = (k * slice) / delta;
+        const t = inverseBezierTime(yTarget, EASE[0], EASE[1], EASE[2], EASE[3]) * spinDurationMs;
+        const timeout = window.setTimeout(() => onTick(), t);
+        tickTimeoutsRef.current.push(timeout);
       }
-    };
-
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
     }
-    animationRef.current = requestAnimationFrame(animate);
-  };
+
+    pendingWinnerRef.current = { index: winner, name: names[winner], rotation: newRotation };
+    setRotation(newRotation);
+  }, [names, onTick, rotation, soundOn, spinDurationMs, spinning]);
+
+  const onTransitionEnd = useCallback(() => {
+    if (!spinning) return;
+    const pending = pendingWinnerRef.current;
+    if (!pending) return;
+    setSpinning(false);
+    setWinnerIndex(pending.index);
+    setWinnerName(pending.name);
+  }, [spinning]);
+
+  const clearWinner = useCallback(() => {
+    setWinnerIndex(null);
+    setWinnerName(null);
+  }, []);
 
   return {
     rotation,
-    isSpinning,
+    setRotation,
+    spinning,
+    winnerIndex,
+    winnerName,
     spin,
+    onTransitionEnd,
+    clearWinner,
   };
 }
