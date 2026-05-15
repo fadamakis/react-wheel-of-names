@@ -3,7 +3,14 @@ import { makeAudio } from "../../audio/makeAudio";
 import { useWheelAnimation } from "./useWheelAnimation";
 
 const STORAGE_KEY = "wheel-of-names:v1";
-const DEFAULT_NAMES = ["Frodo", "Gandalf", "Aragorn", "Gimli", "Legolas", "Sam"];
+const DEFAULT_NAMES = [
+  "Frodo",
+  "Gandalf",
+  "Aragorn",
+  "Gimli",
+  "Legolas",
+  "Sam",
+];
 
 type PersistedState = {
   names: string[];
@@ -36,7 +43,9 @@ function getInitialNames(saved: PersistedState | null): string[] {
 export function useWheel() {
   const saved = loadState();
   const audio = useMemo(() => makeAudio(), []);
-  const [participants, setParticipants] = useState<string[]>(() => getInitialNames(saved));
+  const [participants, setParticipants] = useState<string[]>(() =>
+    getInitialNames(saved),
+  );
   const [soundOn, setSoundOn] = useState<boolean>(saved?.soundOn ?? false);
   const [recentlyAddedIdx, setRecentlyAddedIdx] = useState<number | null>(null);
   const [winnerSerial, setWinnerSerial] = useState(0);
@@ -50,8 +59,7 @@ export function useWheel() {
     spin,
     onTransitionEnd,
     clearWinner,
-  } =
-    useWheelAnimation({
+  } = useWheelAnimation({
     names: participants,
     initialRotation: saved?.rotation ?? 0,
     spinDurationMs: 4000,

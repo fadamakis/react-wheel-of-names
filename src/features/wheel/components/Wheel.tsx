@@ -47,8 +47,17 @@ export function Wheel({
       data-ready={ready}
       data-winner={winnerIndex !== null}
     >
-      <svg viewBox="-380 -380 760 760" className="wheel-svg" aria-label="Name wheel">
-        <circle r={radius + 4} fill={INK} opacity="0.09" transform="translate(0 10)" />
+      <svg
+        viewBox="-380 -380 760 760"
+        className="wheel-svg"
+        aria-label="Name wheel"
+      >
+        <circle
+          r={radius + 4}
+          fill={INK}
+          opacity="0.09"
+          transform="translate(0 10)"
+        />
 
         <g className="tick-ring">
           {Array.from({ length: tickCount }).map((_, i) => {
@@ -93,7 +102,10 @@ export function Wheel({
               strokeWidth="2"
               strokeLinejoin="round"
               style={{
-                opacity: dimLosers && winnerIndex !== null && i !== winnerIndex ? 0.18 : 1,
+                opacity:
+                  dimLosers && winnerIndex !== null && i !== winnerIndex
+                    ? 0.18
+                    : 1,
                 transition: "opacity 600ms ease, filter 400ms ease",
                 filter:
                   dimLosers && winnerIndex !== null && i !== winnerIndex
@@ -104,8 +116,46 @@ export function Wheel({
           ))}
 
           {count > 0 ? (
-            <circle r={radius * 0.34} fill="none" stroke={INK} strokeWidth="2" opacity="0.55" />
+            <circle
+              r={radius * 0.34}
+              fill="none"
+              stroke={INK}
+              strokeWidth="2"
+              opacity="0.55"
+            />
           ) : null}
+
+          {spinning &&
+            count > 0 &&
+            names.map((name, i) => {
+              const center = ((i * slice) % 360 + 360) % 360;
+              const pad = Math.min(8, slice * 0.08);
+              const halfSpan = Math.max(0.5, slice / 2 - pad);
+              const arcPath = labelArcPath(center, labelRadius, halfSpan, false);
+              const arcId = `spin-arc-${i}`;
+              const maxChars = Math.max(4, Math.floor(28 / Math.max(1, fontSize / 14)));
+              const display = useNumbers
+                ? String(i + 1)
+                : name.length > maxChars
+                  ? `${name.slice(0, maxChars - 1)}…`
+                  : name;
+              return (
+                <g key={`spin-label-${name}-${i}`}>
+                  <path id={arcId} d={arcPath} fill="none" stroke="none" />
+                  <text
+                    fontSize={fontSize}
+                    fontWeight={700}
+                    fontFamily="var(--font-ui)"
+                    fill={INK}
+                    letterSpacing="0.01em"
+                  >
+                    <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
+                      {display}
+                    </textPath>
+                  </text>
+                </g>
+              );
+            })}
 
           <g className="wheel-hub">
             <circle r={44} fill={INK} />
@@ -139,7 +189,13 @@ export function Wheel({
               strokeWidth="2"
               strokeDasharray="8 8"
             />
-            <text textAnchor="middle" fontFamily="var(--font-display)" fontSize="32" fill={INK} y="-4">
+            <text
+              textAnchor="middle"
+              fontFamily="var(--font-display)"
+              fontSize="32"
+              fill={INK}
+              y="-4"
+            >
               add some
             </text>
             <text
@@ -159,12 +215,19 @@ export function Wheel({
           count > 0 &&
           names.map((name, i) => {
             const effective = (((i * slice + rotation) % 360) + 360) % 360;
-            const flip = effective > 90 && effective < 270;
             const pad = Math.min(8, slice * 0.08);
             const halfSpan = Math.max(0.5, slice / 2 - pad);
-            const arcPath = labelArcPath(effective, labelRadius, halfSpan, flip);
+            const arcPath = labelArcPath(
+              effective,
+              labelRadius,
+              halfSpan,
+              false,
+            );
             const arcId = `arc-${i}`;
-            const maxChars = Math.max(4, Math.floor(28 / Math.max(1, fontSize / 14)));
+            const maxChars = Math.max(
+              4,
+              Math.floor(28 / Math.max(1, fontSize / 14)),
+            );
             const display = useNumbers
               ? String(i + 1)
               : name.length > maxChars
@@ -175,7 +238,8 @@ export function Wheel({
               <g
                 key={`label-${name}-${i}`}
                 style={{
-                  opacity: dimLosers && winnerIndex !== null && !isWinner ? 0.2 : 1,
+                  opacity:
+                    dimLosers && winnerIndex !== null && !isWinner ? 0.2 : 1,
                   transition: "opacity 500ms ease",
                 }}
               >
@@ -187,7 +251,11 @@ export function Wheel({
                   fill={INK}
                   letterSpacing="0.01em"
                 >
-                  <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
+                  <textPath
+                    href={`#${arcId}`}
+                    startOffset="50%"
+                    textAnchor="middle"
+                  >
                     {display}
                   </textPath>
                 </text>
