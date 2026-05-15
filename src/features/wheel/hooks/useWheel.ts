@@ -41,7 +41,16 @@ export function useWheel() {
   const [recentlyAddedIdx, setRecentlyAddedIdx] = useState<number | null>(null);
   const [winnerSerial, setWinnerSerial] = useState(0);
 
-  const { rotation, setRotation, spinning, winnerIndex, winnerName, spin, onTransitionEnd, clearWinner } =
+  const {
+    rotation,
+    setRotation,
+    spinning,
+    winnerIndex,
+    winnerName,
+    spin,
+    onTransitionEnd,
+    clearWinner,
+  } =
     useWheelAnimation({
     names: participants,
     initialRotation: saved?.rotation ?? 0,

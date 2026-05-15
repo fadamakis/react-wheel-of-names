@@ -103,39 +103,6 @@ export function Wheel({
             />
           ))}
 
-          {spinning &&
-            count > 0 &&
-            names.map((name, i) => {
-              const effective = (((i * slice) % 360) + 360) % 360;
-              const flip = effective > 90 && effective < 270;
-              const pad = Math.min(8, slice * 0.08);
-              const halfSpan = Math.max(0.5, slice / 2 - pad);
-              const arcPath = labelArcPath(effective, labelRadius, halfSpan, flip);
-              const arcId = `spin-arc-${i}`;
-              const maxChars = Math.max(4, Math.floor(28 / Math.max(1, fontSize / 14)));
-              const display = useNumbers
-                ? String(i + 1)
-                : name.length > maxChars
-                  ? `${name.slice(0, maxChars - 1)}…`
-                  : name;
-              return (
-                <g key={`spin-label-${name}-${i}`}>
-                  <path id={arcId} d={arcPath} fill="none" stroke="none" />
-                  <text
-                    fontSize={fontSize}
-                    fontWeight={700}
-                    fontFamily="var(--font-ui)"
-                    fill={INK}
-                    letterSpacing="0.01em"
-                  >
-                    <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
-                      {display}
-                    </textPath>
-                  </text>
-                </g>
-              );
-            })}
-
           {count > 0 ? (
             <circle r={radius * 0.34} fill="none" stroke={INK} strokeWidth="2" opacity="0.55" />
           ) : null}

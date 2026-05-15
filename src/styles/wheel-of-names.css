@@ -305,7 +305,7 @@ body::before {
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 620px;
+  max-width: 580px;
   aspect-ratio: 1 / 1;
 }
 
