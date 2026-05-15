@@ -18,6 +18,14 @@ type PersistedState = {
   soundOn: boolean;
 };
 
+function saveState(payload: PersistedState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore storage issues
+  }
+}
+
 function loadState(): PersistedState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -48,12 +56,12 @@ export function useWheel() {
   );
   const [soundOn, setSoundOn] = useState<boolean>(saved?.soundOn ?? false);
   const [recentlyAddedIdx, setRecentlyAddedIdx] = useState<number | null>(null);
-  const [winnerSerial, setWinnerSerial] = useState(0);
 
   const {
     rotation,
     setRotation,
     spinning,
+    waiting,
     winnerIndex,
     winnerName,
     spin,
@@ -68,22 +76,16 @@ export function useWheel() {
   });
 
   useEffect(() => {
-    const payload: PersistedState = {
-      names: participants,
-      rotation,
-      soundOn,
-    };
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // ignore storage issues
-    }
-  }, [participants, rotation, soundOn]);
+    const timeout = window.setTimeout(() => {
+      saveState({
+        names: participants,
+        rotation,
+        soundOn,
+      });
+    }, waiting ? 1600 : 250);
 
-  useEffect(() => {
-    if (!winnerName) return;
-    setWinnerSerial((prev) => prev + 1);
-  }, [winnerName]);
+    return () => window.clearTimeout(timeout);
+  }, [participants, rotation, soundOn, waiting]);
 
   const handleAddParticipant = useCallback((name: string) => {
     const value = name.trim();
@@ -131,11 +133,11 @@ export function useWheel() {
     audio,
     rotation,
     spinning,
+    waiting,
     winnerIndex,
     winnerName,
     soundOn,
     recentlyAddedIdx,
-    winnerSerial,
     setSoundOn,
     spin,
     onTransitionEnd,

@@ -1,14 +1,12 @@
 type WinnerOverlayProps = {
   open: boolean;
   winnerName: string | null;
-  winnerSerial: number;
   onDismiss: () => void;
 };
 
 export function WinnerOverlay({
   open,
   winnerName,
-  winnerSerial,
   onDismiss,
 }: WinnerOverlayProps) {
   if (!open || !winnerName) return null;
@@ -17,9 +15,16 @@ export function WinnerOverlay({
     <div className="winner-overlay" onClick={onDismiss}>
       <div className="winner-card" onClick={(event) => event.stopPropagation()}>
         <div className="winner-corner tl" />
-        <div className="winner-corner tr" />
         <div className="winner-corner bl" />
         <div className="winner-corner br" />
+        <button
+          type="button"
+          className="winner-close"
+          onClick={onDismiss}
+          aria-label="Close"
+        >
+          ×
+        </button>
         <span className="eyebrow winner-eyebrow">The wheel has spoken</span>
         <div className="winner-name-wrap">
           <h2 className="winner-name">{winnerName}</h2>
@@ -32,7 +37,6 @@ export function WinnerOverlay({
             Close
           </button>
         </div>
-        <span className="winner-stamp mono">№ {winnerSerial.toString().padStart(3, "0")}</span>
       </div>
     </div>
   );

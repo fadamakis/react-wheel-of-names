@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { fireConfetti } from "./features/confetti/fireConfetti";
 import { BulkPasteModal } from "./features/roster/BulkPasteModal";
 import { RosterPanel } from "./features/roster/RosterPanel";
+import { SpinControls } from "./features/wheel/components/SpinControls";
 import { Wheel } from "./features/wheel/components/Wheel";
 import { useWheel } from "./features/wheel/hooks/useWheel";
 import { PALETTES } from "./features/wheel/lib/wheelGeometry";
@@ -17,7 +18,6 @@ export default function WheelOfNames() {
     winnerName,
     soundOn,
     recentlyAddedIdx,
-    winnerSerial,
     setSoundOn,
     spin,
     onTransitionEnd,
@@ -145,10 +145,26 @@ export default function WheelOfNames() {
             spinning={spinning}
             spinDurationMs={4000}
             winnerIndex={winnerIndex}
-            dimLosers={showWinnerOverlay}
+            dimLosers={false}
             ready={ready && participants.length >= 2}
             onTransitionEnd={onTransitionEnd}
           />
+          <div className="wheel-spin-overlay" data-visible={!spinning}>
+            <SpinControls
+              canSpin={canSpin}
+              spinning={spinning}
+              namesCount={participants.length}
+              soundOn={soundOn}
+              onSpin={onSpinClick}
+              onToggleSound={() => {
+                const next = !soundOn;
+                setSoundOn(next);
+                if (next) audio.ensure();
+              }}
+              showUtilityBar={false}
+              buttonClassName="spin-btn-overlay"
+            />
+          </div>
         </section>
         <RosterPanel
           names={participants}
@@ -181,7 +197,6 @@ export default function WheelOfNames() {
       <WinnerOverlay
         open={showWinnerOverlay}
         winnerName={winnerName}
-        winnerSerial={winnerSerial}
         onDismiss={onDismissWinner}
       />
     </div>

@@ -41,6 +41,7 @@ export function RosterPanel({
         soundOn={soundOn}
         onSpin={onSpin}
         onToggleSound={onToggleSound}
+        showButton={false}
       />
       <section className="panel panel-add">
         <header className="panel-head">

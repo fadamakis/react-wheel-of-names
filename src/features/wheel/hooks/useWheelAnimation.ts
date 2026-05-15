@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { inverseBezierTime } from "../lib/easing";
 
 const EASE = [0.16, 1, 0.25, 1] as const;
+const WAITING_SPIN_DEGREES_PER_SECOND = 6;
 
 type PendingWinner = {
   index: number;
@@ -30,6 +31,9 @@ export function useWheelAnimation({
   const [winnerName, setWinnerName] = useState<string | null>(null);
   const pendingWinnerRef = useRef<PendingWinner | null>(null);
   const tickTimeoutsRef = useRef<number[]>([]);
+  const waitingAnimationFrameRef = useRef<number | null>(null);
+  const lastWaitingFrameRef = useRef<number | null>(null);
+  const waiting = names.length >= 2 && !spinning && winnerIndex === null;
 
   useEffect(() => {
     setRotation(initialRotation);
@@ -40,9 +44,41 @@ export function useWheelAnimation({
       for (const timeout of tickTimeoutsRef.current) {
         window.clearTimeout(timeout);
       }
+      if (waitingAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(waitingAnimationFrameRef.current);
+      }
     },
     []
   );
+
+  useEffect(() => {
+    if (!waiting) {
+      if (waitingAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(waitingAnimationFrameRef.current);
+        waitingAnimationFrameRef.current = null;
+      }
+      lastWaitingFrameRef.current = null;
+      return;
+    }
+
+    const step = (timestamp: number) => {
+      const last = lastWaitingFrameRef.current ?? timestamp;
+      const deltaSeconds = (timestamp - last) / 1000;
+      lastWaitingFrameRef.current = timestamp;
+      setRotation((prev) => prev + deltaSeconds * WAITING_SPIN_DEGREES_PER_SECOND);
+      waitingAnimationFrameRef.current = window.requestAnimationFrame(step);
+    };
+
+    waitingAnimationFrameRef.current = window.requestAnimationFrame(step);
+
+    return () => {
+      if (waitingAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(waitingAnimationFrameRef.current);
+        waitingAnimationFrameRef.current = null;
+      }
+      lastWaitingFrameRef.current = null;
+    };
+  }, [waiting]);
 
   const spin = useCallback(() => {
     if (spinning || names.length < 2) return;
@@ -98,6 +134,7 @@ export function useWheelAnimation({
     rotation,
     setRotation,
     spinning,
+    waiting,
     winnerIndex,
     winnerName,
     spin,
