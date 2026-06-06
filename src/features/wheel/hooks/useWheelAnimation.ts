@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { inverseBezierTime } from "../lib/easing";
+import { inverseBezierTime, SPIN_EASE } from "../lib/easing";
 
-const EASE = [0.16, 1, 0.25, 1] as const;
+const EASE = SPIN_EASE;
 const WAITING_SPIN_DEGREES_PER_SECOND = 6;
 
 type PendingWinner = {
@@ -26,17 +26,25 @@ export function useWheelAnimation({
   onTick,
 }: UseWheelAnimationProps) {
   const [rotation, setRotation] = useState(initialRotation);
+  const [spinFromRotation, setSpinFromRotation] = useState(initialRotation);
   const [spinning, setSpinning] = useState(false);
   const [winnerIndex, setWinnerIndex] = useState<number | null>(null);
   const [winnerName, setWinnerName] = useState<string | null>(null);
+  const rotationRef = useRef(initialRotation);
   const pendingWinnerRef = useRef<PendingWinner | null>(null);
+  const spinFrameRef = useRef<number | null>(null);
   const tickTimeoutsRef = useRef<number[]>([]);
   const waitingAnimationFrameRef = useRef<number | null>(null);
   const lastWaitingFrameRef = useRef<number | null>(null);
   const waiting = names.length >= 2 && !spinning && winnerIndex === null;
 
   useEffect(() => {
+    rotationRef.current = rotation;
+  }, [rotation]);
+
+  useEffect(() => {
     setRotation(initialRotation);
+    rotationRef.current = initialRotation;
   }, [initialRotation]);
 
   useEffect(
@@ -46,6 +54,9 @@ export function useWheelAnimation({
       }
       if (waitingAnimationFrameRef.current !== null) {
         window.cancelAnimationFrame(waitingAnimationFrameRef.current);
+      }
+      if (spinFrameRef.current !== null) {
+        window.cancelAnimationFrame(spinFrameRef.current);
       }
     },
     []
@@ -85,18 +96,20 @@ export function useWheelAnimation({
     setWinnerIndex(null);
     setWinnerName(null);
 
+    const fromRotation = rotationRef.current;
     const winner = Math.floor(Math.random() * names.length);
     const count = names.length;
     const slice = 360 / count;
     const baseExtra = (360 - winner * slice) % 360;
     const jitter = (Math.random() - 0.5) * slice * 0.7;
     const target = ((baseExtra + jitter) % 360 + 360) % 360;
-    const currentMod = ((rotation % 360) + 360) % 360;
+    const currentMod = ((fromRotation % 360) + 360) % 360;
     let delta = target - currentMod;
     if (delta <= 0) delta += 360;
     delta += 360 * (5 + Math.floor(Math.random() * 2));
 
-    const newRotation = rotation + delta;
+    const newRotation = fromRotation + delta;
+    setSpinFromRotation(fromRotation);
     setSpinning(true);
 
     tickTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
@@ -113,8 +126,18 @@ export function useWheelAnimation({
     }
 
     pendingWinnerRef.current = { index: winner, name: names[winner], rotation: newRotation };
-    setRotation(newRotation);
-  }, [names, onTick, rotation, soundOn, spinDurationMs, spinning]);
+
+    if (spinFrameRef.current !== null) {
+      window.cancelAnimationFrame(spinFrameRef.current);
+    }
+    // Enable the CSS transition on the current angle before applying the target.
+    spinFrameRef.current = window.requestAnimationFrame(() => {
+      spinFrameRef.current = window.requestAnimationFrame(() => {
+        spinFrameRef.current = null;
+        setRotation(newRotation);
+      });
+    });
+  }, [names, onTick, soundOn, spinDurationMs, spinning]);
 
   const onTransitionEnd = useCallback(() => {
     if (!spinning) return;
@@ -132,6 +155,7 @@ export function useWheelAnimation({
 
   return {
     rotation,
+    spinFromRotation,
     setRotation,
     spinning,
     waiting,

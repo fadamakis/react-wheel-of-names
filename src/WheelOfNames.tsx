@@ -13,6 +13,7 @@ export default function WheelOfNames() {
     participants,
     audio,
     rotation,
+    spinFromRotation,
     spinning,
     winnerIndex,
     winnerName,
@@ -130,9 +131,9 @@ export default function WheelOfNames() {
             <span>A fair randomizer</span>
           </div>
           <p className="masthead-tagline">
-            Add the players. Spin the wheel. Whoever lands under the claw{" "}
-            presents, buys the coffee, or <strong>runs the standup</strong>{" "}
-            next.
+            Add the names. Spin the wheel. Whoever lands under the claw{" "}
+            presents, buys a coffee, or{" "}
+            <strong>faciliates the next meeting</strong>.
           </p>
         </div>
       </header>
@@ -142,11 +143,13 @@ export default function WheelOfNames() {
           <Wheel
             names={participants}
             rotation={rotation}
+            spinFromRotation={spinFromRotation}
             spinning={spinning}
             spinDurationMs={4000}
             winnerIndex={winnerIndex}
-            dimLosers={false}
             ready={ready && participants.length >= 2}
+            canSpin={canSpin}
+            onSpin={onSpinClick}
             onTransitionEnd={onTransitionEnd}
           />
           <div className="wheel-spin-overlay" data-visible={!spinning}>

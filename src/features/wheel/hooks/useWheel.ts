@@ -59,6 +59,7 @@ export function useWheel() {
 
   const {
     rotation,
+    spinFromRotation,
     setRotation,
     spinning,
     waiting,
@@ -132,6 +133,7 @@ export function useWheel() {
     participants,
     audio,
     rotation,
+    spinFromRotation,
     spinning,
     waiting,
     winnerIndex,
