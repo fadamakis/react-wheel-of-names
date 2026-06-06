@@ -2,10 +2,15 @@ export const INK = "#121117";
 export const SURFACE = "#FFFFFF";
 
 export const PALETTES = {
-  carnival: ["#FF7AAC", "#FFDF3D", "#3DDABE", "#2885FD"],
+  carnival: ["#FF7AAC", "#FFDF3D", "#FF914D", "#3DDABE", "#2885FD"],
 } as const;
 
 export type PaletteName = keyof typeof PALETTES;
+
+export function wheelSegmentColor(index: number, palette: readonly string[]): string {
+  const lap = Math.floor(index / palette.length);
+  return palette[(index + lap) % palette.length];
+}
 
 export function toRad(wheelDeg: number): number {
   return ((wheelDeg - 90) * Math.PI) / 180;

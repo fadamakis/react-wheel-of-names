@@ -4,6 +4,7 @@ import {
   SURFACE,
   labelArcPath,
   wedgePath,
+  wheelSegmentColor,
 } from "../lib/wheelGeometry";
 
 function normalizeAngle(angle: number): number {
@@ -57,7 +58,7 @@ export function Wheel({
   const labelRadius = radius * 0.66;
   const count = names.length;
   const slice = count > 0 ? 360 / count : 360;
-  const colors = PALETTES[palette];
+  const paletteColors = PALETTES[palette];
   const longest = names.reduce((max, name) => Math.max(max, name.length), 1);
   const arcLen = (slice * Math.PI * labelRadius) / 180;
   const fontByArc = (arcLen * 0.78) / Math.max(longest * 0.55, 1);
@@ -157,7 +158,7 @@ export function Wheel({
             <path
               key={`wedge-${name}-${i}`}
               d={wedgePath(i, slice, radius - 5)}
-              fill={colors[i % colors.length]}
+              fill={wheelSegmentColor(i, paletteColors)}
               stroke={INK}
               strokeWidth="2"
               strokeLinejoin="round"
