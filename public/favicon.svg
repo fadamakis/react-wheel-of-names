@@ -1,0 +1,25 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="Wheel of Names favicon"
+>
+  <defs>
+    <clipPath id="wheel-cut">
+      <circle cx="32" cy="34" r="24" />
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#wheel-cut)">
+    <path d="M32 34 L32 10 A24 24 0 0 1 54.83 26.58 Z" fill="#FF7AAC" />
+    <path d="M32 34 L54.83 26.58 A24 24 0 0 1 46.11 53.42 Z" fill="#FFDF3D" />
+    <path d="M32 34 L46.11 53.42 A24 24 0 0 1 17.89 53.42 Z" fill="#FF914D" />
+    <path d="M32 34 L17.89 53.42 A24 24 0 0 1 9.17 26.58 Z" fill="#3DDABE" />
+    <path d="M32 34 L9.17 26.58 A24 24 0 0 1 32 10 Z" fill="#2885FD" />
+  </g>
+
+  <circle cx="32" cy="34" r="24" fill="none" stroke="#121117" stroke-width="2.5" />
+  <circle cx="32" cy="34" r="6.5" fill="#121117" />
+  <circle cx="32" cy="34" r="3" fill="#FFFFFF" />
+
+</svg>
