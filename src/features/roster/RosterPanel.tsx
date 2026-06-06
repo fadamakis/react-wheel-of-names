@@ -3,7 +3,6 @@ import { SpinControls } from "../wheel/components/SpinControls";
 
 type RosterPanelProps = {
   names: string[];
-  winnerIndex: number | null;
   recentlyAddedIdx: number | null;
   inputRef: RefObject<HTMLInputElement | null>;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -19,7 +18,6 @@ type RosterPanelProps = {
 
 export function RosterPanel({
   names,
-  winnerIndex,
   recentlyAddedIdx,
   inputRef,
   onSubmit,
@@ -88,7 +86,6 @@ export function RosterPanel({
               key={`${name}-${i}`}
               className="name-row"
               data-recent={recentlyAddedIdx === i}
-              data-winner={winnerIndex === i}
             >
               <span className="name-num">{String(i + 1).padStart(2, "0")}</span>
               <span className="name-text">{name}</span>

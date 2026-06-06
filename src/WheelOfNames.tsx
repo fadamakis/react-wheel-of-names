@@ -15,11 +15,14 @@ export default function WheelOfNames() {
     rotation,
     spinFromRotation,
     spinning,
-    winnerIndex,
     winnerName,
+    activeSpinDurationMs,
     soundOn,
     recentlyAddedIdx,
     setSoundOn,
+    setRotation,
+    onDragStart,
+    onDragEnd,
     spin,
     onTransitionEnd,
     clearWinner,
@@ -32,6 +35,7 @@ export default function WheelOfNames() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [showWinnerOverlay, setShowWinnerOverlay] = useState(false);
+  const [wheelDragging, setWheelDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -76,12 +80,18 @@ export default function WheelOfNames() {
   }, []);
 
   const canSpin = participants.length >= 2 && !spinning;
-  const ready = !spinning && !showWinnerOverlay;
+  const ready = !spinning && !showWinnerOverlay && !winnerName;
 
   const onSpinClick = () => {
     setShowWinnerOverlay(false);
     clearWinner();
     spin();
+  };
+
+  const onFlickSpin = (velocityDegPerSec: number) => {
+    setShowWinnerOverlay(false);
+    clearWinner();
+    spin({ velocityDegPerSec });
   };
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -145,14 +155,21 @@ export default function WheelOfNames() {
             rotation={rotation}
             spinFromRotation={spinFromRotation}
             spinning={spinning}
-            spinDurationMs={4000}
-            winnerIndex={winnerIndex}
+            spinDurationMs={activeSpinDurationMs}
             ready={ready && participants.length >= 2}
             canSpin={canSpin}
             onSpin={onSpinClick}
+            onFlickSpin={onFlickSpin}
+            setRotation={setRotation}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDraggingChange={setWheelDragging}
             onTransitionEnd={onTransitionEnd}
           />
-          <div className="wheel-spin-overlay" data-visible={!spinning}>
+          <div
+            className="wheel-spin-overlay"
+            data-visible={!spinning && !wheelDragging}
+          >
             <SpinControls
               canSpin={canSpin}
               spinning={spinning}
@@ -171,7 +188,6 @@ export default function WheelOfNames() {
         </section>
         <RosterPanel
           names={participants}
-          winnerIndex={winnerIndex}
           recentlyAddedIdx={recentlyAddedIdx}
           inputRef={inputRef}
           onSubmit={onSubmit}

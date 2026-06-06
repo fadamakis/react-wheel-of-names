@@ -332,8 +332,36 @@ body::before {
   cursor: default;
 }
 
+.wheel-stage[data-can-spin="true"]:not([data-spinning="true"]) {
+  touch-action: none;
+}
+
 .wheel-stage[data-can-spin="true"]:not([data-spinning="true"]) .wheel-wedge {
-  cursor: pointer;
+  cursor: grab;
+}
+
+.wheel-stage[data-dragging="true"] {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.wheel-stage[data-dragging="true"] .wheel-svg,
+.wheel-stage[data-dragging="true"] .wheel-hub-btn {
+  cursor: grabbing;
+}
+
+.wheel-stage[data-dragging="true"] .wheel-wedge {
+  cursor: grabbing;
+}
+
+.wheel-stage[data-dragging="true"] .wheel-hub-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wheel-stage[data-dragging="true"]::after {
+  animation: none;
+  opacity: 0;
 }
 
 .wheel-sheen {
@@ -345,7 +373,7 @@ body::before {
 .wheel-spin-overlay {
   position: absolute;
   right: clamp(12px, 4vw, 24px);
-  bottom: clamp(18px, 5vw, 40px);
+  bottom: clamp(18px, 5vw, 25px);
   left: clamp(12px, 4vw, 24px);
   z-index: 5;
   pointer-events: none;
@@ -371,9 +399,7 @@ body::before {
   pointer-events: auto;
 }
 
-.wheel-stage[data-ready="true"]:not([data-spinning="true"]):not(
-    [data-winner="true"]
-  )::after {
+.wheel-stage[data-ready="true"]:not([data-spinning="true"])::after {
   content: "";
   position: absolute;
   inset: 8.25%;
@@ -452,18 +478,6 @@ body::before {
   }
   50% {
     filter: drop-shadow(0 0 10px rgb(255 122 172 / 28%));
-  }
-}
-
-@keyframes winner-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    stroke-width: 6;
-  }
-  50% {
-    opacity: 0.85;
-    stroke-width: 10;
   }
 }
 
@@ -909,10 +923,6 @@ body::before {
   height: 60%;
   background: var(--ink);
   transform: translateY(-50%);
-}
-
-.name-row[data-winner="true"] .name-text {
-  font-weight: 700;
 }
 
 @keyframes name-in {

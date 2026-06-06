@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { usePointerWobble } from "../hooks/usePointerWobble";
+import { useWheelDrag } from "../hooks/useWheelDrag";
 import { spinEaseCss } from "../lib/easing";
 import {
   INK,
@@ -43,10 +44,14 @@ type WheelProps = {
   spinFromRotation: number;
   spinning: boolean;
   spinDurationMs: number;
-  winnerIndex: number | null;
   ready: boolean;
   canSpin?: boolean;
   onSpin?: () => void;
+  onFlickSpin?: (velocityDegPerSec: number) => void;
+  setRotation?: (rotation: number) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  onDraggingChange?: (dragging: boolean) => void;
   onTransitionEnd: () => void;
 };
 
@@ -57,13 +62,18 @@ export function Wheel({
   spinFromRotation,
   spinning,
   spinDurationMs,
-  winnerIndex,
   ready,
   canSpin = false,
   onSpin,
+  onFlickSpin,
+  setRotation,
+  onDragStart,
+  onDragEnd,
+  onDraggingChange,
   onTransitionEnd,
 }: WheelProps & { palette?: keyof typeof PALETTES }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const flapperRef = useRef<SVGGElement>(null);
   const radius = 320;
   const labelRadius = radius * 0.66;
@@ -90,6 +100,22 @@ export function Wheel({
     count
   );
 
+  const dragEnabled =
+    canSpin &&
+    !spinning &&
+    Boolean(onFlickSpin && setRotation && onDragStart && onDragEnd);
+
+  const { dragging, dragHandlers } = useWheelDrag({
+    stageRef,
+    enabled: dragEnabled,
+    rotation,
+    setRotation: setRotation ?? (() => undefined),
+    onDragStart: onDragStart ?? (() => undefined),
+    onDragEnd: onDragEnd ?? (() => undefined),
+    onFlickSpin: onFlickSpin ?? (() => undefined),
+    onDraggingChange,
+  });
+
   const displayFor = (name: string, index: number) =>
     useNumbers ? String(index + 1) : truncateWordAware(name, maxChars);
 
@@ -99,8 +125,7 @@ export function Wheel({
     index: number,
     arcPath: string,
     arcId: string,
-    segmentFill: string,
-    isWinner: boolean
+    segmentFill: string
   ) => {
     const display = displayFor(name, index);
     const colors = labelColorsForSegment(segmentFill);
@@ -110,11 +135,11 @@ export function Wheel({
         <path id={arcId} d={arcPath} fill="none" stroke="none" />
         <text
           fontSize={size}
-          fontWeight={isWinner ? 800 : 700}
+          fontWeight={700}
           fontFamily="var(--font-ui)"
           fill={colors.fill}
           stroke={colors.stroke}
-          strokeWidth={isWinner ? 4 : 3.5}
+          strokeWidth={3.5}
           paintOrder="stroke"
           letterSpacing="0.01em"
         >
@@ -129,11 +154,13 @@ export function Wheel({
 
   return (
     <div
+      ref={stageRef}
       className="wheel-stage"
       data-spinning={spinning}
       data-ready={ready}
-      data-winner={winnerIndex !== null}
       data-can-spin={canSpin}
+      data-dragging={dragging}
+      {...dragHandlers}
     >
       <svg
         viewBox="-380 -380 760 760"
@@ -162,13 +189,6 @@ export function Wheel({
             <stop offset="58%" stopColor="#e7e6ee" />
             <stop offset="100%" stopColor="#c8c6d4" />
           </radialGradient>
-          <filter id="winner-glow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {count > 0 ? (
@@ -214,8 +234,7 @@ export function Wheel({
 
           {names.map((name, i) => {
             const segmentFill = wheelSegmentColor(i, paletteColors);
-            const isWinner = winnerIndex === i;
-            const isHovered = !spinning && hoveredIndex === i;
+            const isHovered = !spinning && !dragging && hoveredIndex === i;
             return (
               <path
                 key={`wedge-${name}-${i}`}
@@ -226,16 +245,11 @@ export function Wheel({
                 strokeWidth="2"
                 strokeLinejoin="round"
                 data-hovered={isHovered}
-                data-winner={isWinner}
-                onMouseEnter={() => !spinning && setHoveredIndex(i)}
+                onMouseEnter={() => !spinning && !dragging && setHoveredIndex(i)}
                 onMouseLeave={() => setHoveredIndex(null)}
                 style={{
                   transition: "filter 400ms ease",
-                  filter: isWinner
-                    ? "brightness(1.08) saturate(1.12)"
-                    : isHovered
-                      ? "brightness(1.06) saturate(1.05)"
-                      : "none",
+                  filter: isHovered ? "brightness(1.06) saturate(1.05)" : "none",
                 }}
               />
             );
@@ -273,8 +287,7 @@ export function Wheel({
                 i,
                 arcPath,
                 arcId,
-                segmentFill,
-                false
+                segmentFill
               );
             })}
         </g>
@@ -327,7 +340,6 @@ export function Wheel({
             const halfSpan = Math.max(0.5, slice / 2 - pad);
             const arcPath = labelArcPath(effective, labelRadius, halfSpan, false);
             const arcId = `arc-${i}`;
-            const isWinner = winnerIndex === i;
             const segmentFill = wheelSegmentColor(i, paletteColors);
             return renderLabel(
               `label-${name}-${i}`,
@@ -335,33 +347,9 @@ export function Wheel({
               i,
               arcPath,
               arcId,
-              segmentFill,
-              isWinner
+              segmentFill
             );
           })}
-
-        {!spinning && winnerIndex !== null ? (
-          <g
-            className="winner-halo"
-            transform={`rotate(${(((winnerIndex * slice + rotation) % 360) + 360) % 360})`}
-          >
-            <path
-              d={wedgePath(0, slice, radius - 5)}
-              fill={wheelSegmentColor(winnerIndex, paletteColors)}
-              opacity="0.28"
-              stroke="none"
-            />
-            <path
-              d={wedgePath(0, slice, radius - 5)}
-              fill="none"
-              stroke={INK}
-              strokeWidth="6"
-              strokeLinejoin="round"
-              filter="url(#winner-glow)"
-              style={{ animation: "winner-pulse 1200ms ease-in-out infinite" }}
-            />
-          </g>
-        ) : null}
 
         {count > 0 ? (
           <g className="wheel-landing-notch" aria-hidden="true">
